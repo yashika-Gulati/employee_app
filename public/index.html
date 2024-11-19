@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Management</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        input, select {
+            padding: 8px;
+            margin: 5px 0;
+            width: 100%;
+            max-width: 300px;
+        }
+        button {
+            padding: 8px 16px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Employee Management System</h1>
+
+    <h2>Create Department</h2>
+    <form id="createDepartmentForm">
+        <label for="deptName">Department Name:</label>
+        <input type="text" id="deptName" required>
+        <button type="submit">Create Department</button>
+    </form>
+
+    <h2>Create Employee</h2>
+    <form id="createEmployeeForm">
+        <label for="firstName">First Name:</label>
+        <input type="text" id="firstName" required>
+
+        <label for="lastName">Last Name:</label>
+        <input type="text" id="lastName" required>
+
+        <label for="departmentId">Department:</label>
+        <select id="departmentId" required></select>
+
+        <button type="submit">Create Employee</button>
+    </form>
+
+    <h2>Assign Employee to Department</h2>
+    <form id="assignEmployeeForm">
+        <label for="employeeId">Employee:</label>
+        <select id="employeeId" required></select>
+
+        <label for="assignDeptId">Department:</label>
+        <select id="assignDeptId" required></select>
+
+        <button type="submit">Assign</button>
+    </form>
+
+    <h2>View Employees</h2>
+    <button id="viewEmployees">Fetch Employees</button>
+    <div id="employeeList"></div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:3000';
+
+        // Fetch all departments and populate the department dropdowns
+        async function fetchDepartments() {
+            const response = await fetch(`${API_BASE_URL}/departments`);
+            const departments = await response.json();
+            const departmentSelects = document.querySelectorAll('#departmentId, #assignDeptId');
+            departmentSelects.forEach(select => {
+                select.innerHTML = departments.map(dept => `<option value="${dept.id}">${dept.name}</option>`).join('');
+            });
+        }
+
+        // Fetch all employees and populate the employee dropdown
+        async function fetchEmployees() {
+            const response = await fetch(`${API_BASE_URL}/employees`);
+            const employees = await response.json();
+            const employeeSelect = document.getElementById('employeeId');
+            employeeSelect.innerHTML = employees.map(emp => `<option value="${emp.id}">${emp.firstName} ${emp.lastName}</option>`).join('');
+        }
+
+        // Create a department
+        document.getElementById('createDepartmentForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const deptName = document.getElementById('deptName').value;
+            await fetch(`${API_BASE_URL}/department`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: deptName })
+            });
+            await fetchDepartments();
+            document.getElementById('createDepartmentForm').reset();
+        });
+
+        // Create an employee
+        document.getElementById('createEmployeeForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const firstName = document.getElementById('firstName').value;
+            const lastName = document.getElementById('lastName').value;
+            const departmentId = document.getElementById('departmentId').value;
+            await fetch(`${API_BASE_URL}/employee`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ firstName, lastName, departmentId })
+            });
+            await fetchEmployees();
+            document.getElementById('createEmployeeForm').reset();
+        });
+
+        // Assign an employee to a department
+        document.getElementById('assignEmployeeForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const employeeId = document.getElementById('employeeId').value;
+            const departmentId = document.getElementById('assignDeptId').value;
+            await fetch(`${API_BASE_URL}/employee/${employeeId}/department/${departmentId}`, {
+                method: 'PUT',
+            });
+        });
+
+        // Fetch and display all employees
+        document.getElementById('viewEmployees').addEventListener('click', async () => {
+            const response = await fetch(`${API_BASE_URL}/employees`);
+            const employees = await response.json();
+            const employeeList = document.getElementById('employeeList');
+            employeeList.innerHTML = employees.map(emp => `
+                <p>${emp.firstName} ${emp.lastName} - Department: ${emp.Department ? emp.Department.name : 'Unassigned'}</p>
+            `).join('');
+        });
+
+        // Initial fetch of departments and employees
+        fetchDepartments();
+        fetchEmployees();
+    </script>
+</body>
+</html>
